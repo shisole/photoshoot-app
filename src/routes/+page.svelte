@@ -47,7 +47,7 @@
 	</div>
 
 	{#if !eventId}
-		<div class="flex justify-center">
+		<div class="flex flex-col items-center gap-4">
 			<form method="POST" action="?/create" use:enhance>
 				<button
 					type="submit"
@@ -56,6 +56,12 @@
 					Create Event
 				</button>
 			</form>
+			<a
+				href="/gallery"
+				class="text-sm font-medium text-primary hover:text-primary-dark"
+			>
+				View an existing event's gallery
+			</a>
 		</div>
 	{:else}
 		<div class="space-y-8">
