@@ -126,5 +126,12 @@
 				<p class="font-medium text-green-700">All photos uploaded successfully!</p>
 			</div>
 		{/if}
+
+		<a
+			href="/gallery?event={data.eventId}"
+			class="block text-center text-sm font-medium text-primary hover:text-primary-dark"
+		>
+			View event gallery
+		</a>
 	</div>
 </div>

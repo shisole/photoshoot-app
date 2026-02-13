@@ -3,6 +3,7 @@
 	import CameraCapture from '$lib/components/CameraCapture.svelte';
 	import PhotoPreview from '$lib/components/PhotoPreview.svelte';
 	import UploadProgress from '$lib/components/UploadProgress.svelte';
+	import QRCode from '$lib/components/QRCode.svelte';
 	import { compressImage } from '$lib/utils/compress';
 	import { uploadWithProgress } from '$lib/utils/upload';
 	import { getUploadedCount, incrementUploadedCount } from '$lib/utils/upload-limit';
@@ -12,6 +13,7 @@
 	let eventId = $state($page.url.searchParams.get('event') ?? '');
 	let photos = $state<string[]>([]);
 	let loading = $state(false);
+	let initialLoad = $state(true);
 	let errorMessage = $state('');
 
 	// Upload state
@@ -57,14 +59,14 @@
 	}
 
 	async function fetchPhotos(id: string) {
-		loading = true;
+		if (initialLoad) loading = true;
 		errorMessage = '';
 		try {
 			const res = await fetch(`/api/photos/${id}`);
 			if (!res.ok) throw new Error('Event not found');
 			const data = await res.json();
 			photos = data.photos;
-			if (photos.length === 0) {
+			if (photos.length === 0 && initialLoad) {
 				errorMessage = 'No photos found for this event.';
 			}
 		} catch {
@@ -72,6 +74,7 @@
 			errorMessage = 'Could not load photos. Check the event ID and try again.';
 		} finally {
 			loading = false;
+			initialLoad = false;
 		}
 	}
 
@@ -80,6 +83,7 @@
 		const trimmed = eventIdInput.trim();
 		if (trimmed.length < 5) return;
 		eventId = trimmed;
+		initialLoad = true;
 		const url = new URL($page.url);
 		url.searchParams.set('event', trimmed);
 		history.replaceState({}, '', url);
@@ -229,6 +233,11 @@
 					Share
 				</button>
 			</div>
+		</div>
+
+		<div class="mx-auto mb-8 max-w-sm rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+			<h2 class="mb-4 text-center text-lg font-semibold text-gray-700">Scan to view gallery</h2>
+			<QRCode url={galleryLink} />
 		</div>
 
 		<div class="mx-auto mb-8 max-w-lg space-y-4">

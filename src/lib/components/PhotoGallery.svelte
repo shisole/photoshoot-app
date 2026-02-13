@@ -41,9 +41,16 @@
 		{#each photos as photo, i}
 			<button
 				onclick={() => openLightbox(i)}
-				class="aspect-square overflow-hidden rounded-lg transition-transform hover:scale-[1.02]"
+				class="relative aspect-square overflow-hidden rounded-lg transition-transform hover:scale-[1.02]"
 			>
-				<img src={photo} alt="" class="h-full w-full object-cover" loading="lazy" />
+				<div class="absolute inset-0 animate-pulse bg-gray-200"></div>
+				<img
+					src={photo}
+					alt=""
+					class="relative h-full w-full object-cover opacity-0 transition-opacity duration-300"
+					loading="lazy"
+					onload={(e) => { (e.currentTarget as HTMLImageElement).classList.remove('opacity-0'); }}
+				/>
 			</button>
 		{/each}
 	</div>
