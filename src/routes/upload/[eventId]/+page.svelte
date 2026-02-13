@@ -3,6 +3,8 @@
 	import PhotoPreview from '$lib/components/PhotoPreview.svelte';
 	import UploadProgress from '$lib/components/UploadProgress.svelte';
 	import { compressImage } from '$lib/utils/compress';
+	import { uploadWithProgress } from '$lib/utils/upload';
+	import { getUploadedCount, incrementUploadedCount } from '$lib/utils/upload-limit';
 
 	let { data } = $props();
 	const MAX_PHOTOS = 5;
@@ -13,11 +15,17 @@
 	let uploadCurrent = $state(0);
 	let uploadTotal = $state(0);
 	let uploadStatus = $state('');
+	let filePercent = $state(0);
 	let done = $state(false);
 	let errorMessage = $state('');
 
 	let remaining = $derived(MAX_PHOTOS - uploadedCount - selectedFiles.length);
 	let canAddMore = $derived(remaining > 0 && !isUploading && !done);
+
+	$effect(() => {
+		uploadedCount = getUploadedCount(data.eventId);
+		done = uploadedCount >= MAX_PHOTOS;
+	});
 
 	function handleFiles(files: File[]) {
 		const imageFiles = files.filter((f) => f.type.startsWith('image/'));
@@ -39,20 +47,21 @@
 
 		try {
 			for (const file of selectedFiles) {
+				filePercent = 0;
 				uploadStatus = `Compressing photo ${uploadCurrent + 1}...`;
 				const compressed = await compressImage(file);
 
 				uploadStatus = `Uploading photo ${uploadCurrent + 1}...`;
-				const res = await fetch(`/api/photos/${data.eventId}`, {
-					method: 'POST',
-					body: compressed,
-					headers: { 'Content-Type': 'image/jpeg' }
-				});
+				await uploadWithProgress(
+					`/api/photos/${data.eventId}`,
+					compressed,
+					(p) => (filePercent = p)
+				);
 
-				if (!res.ok) throw new Error('Failed to upload photo');
-
+				filePercent = 100;
 				uploadCurrent++;
-				uploadedCount++;
+				incrementUploadedCount(data.eventId);
+				uploadedCount = getUploadedCount(data.eventId);
 			}
 
 			selectedFiles = [];
@@ -97,7 +106,7 @@
 
 		<PhotoPreview files={selectedFiles} onRemove={removeFile} />
 
-		<UploadProgress current={uploadCurrent} total={uploadTotal} status={uploadStatus} />
+		<UploadProgress current={uploadCurrent} total={uploadTotal} status={uploadStatus} {filePercent} />
 
 		{#if errorMessage}
 			<p class="rounded-lg bg-red-50 p-3 text-center text-sm text-red-600">{errorMessage}</p>
