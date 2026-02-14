@@ -13,6 +13,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		eventId,
-		eventName: meta?.name ?? null
+		eventName: meta?.name ?? null,
+		maxPhotos: meta?.maxPhotos ?? 5,
+		uploadDeadline: meta?.uploadDeadline ?? null
 	};
 };

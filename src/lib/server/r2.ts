@@ -15,6 +15,8 @@ function getR2Client() {
 
 export interface EventMeta {
 	name: string;
+	maxPhotos: number;
+	uploadDeadline: string; // ISO 8601 datetime string
 }
 
 export async function saveEventMeta(eventId: string, meta: EventMeta): Promise<void> {

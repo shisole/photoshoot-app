@@ -13,13 +13,15 @@
 	let eventId = $state($page.url.searchParams.get('event') ?? '');
 	let eventName = $state<string | null>(null);
 	let photos = $state<string[]>([]);
-	let loading = $state(false);
-	let initialLoad = $state(true);
+	let loading = $state(!!eventId);
+	let eventLoaded = $state(false);
 	let notFound = $state(false);
 	let errorMessage = $state('');
 
 	// Upload state
-	const MAX_PHOTOS = 5;
+	let maxPhotos = $state(5);
+	let uploadDeadline = $state<string | null>(null);
+	let expired = $derived(uploadDeadline ? new Date() > new Date(uploadDeadline) : false);
 	let selectedFiles = $state<File[]>([]);
 	let uploadedCount = $state(0);
 	let isUploading = $state(false);
@@ -30,8 +32,8 @@
 	let uploadError = $state('');
 	let done = $state(false);
 
-	let remaining = $derived(MAX_PHOTOS - uploadedCount - selectedFiles.length);
-	let canAddMore = $derived(remaining > 0 && !isUploading && !done);
+	let remaining = $derived(maxPhotos - uploadedCount - selectedFiles.length);
+	let canAddMore = $derived(remaining > 0 && !isUploading && !done && !expired);
 	let copiedId = $state(false);
 	let copiedLink = $state(false);
 
@@ -61,8 +63,8 @@
 		}
 	}
 
-	async function fetchPhotos(id: string) {
-		if (initialLoad) loading = true;
+	async function fetchPhotos(id: string, isInitial = false) {
+		if (isInitial) loading = true;
 		errorMessage = '';
 		notFound = false;
 		try {
@@ -71,16 +73,21 @@
 			const data = await res.json();
 			photos = data.photos;
 			eventName = data.eventName ?? null;
+			maxPhotos = data.maxPhotos ?? 5;
+			uploadDeadline = data.uploadDeadline ?? null;
 			if (!eventName && photos.length === 0) {
 				notFound = true;
+				eventLoaded = false;
+			} else {
+				eventLoaded = true;
 			}
 		} catch {
 			photos = [];
 			eventName = null;
 			notFound = true;
+			eventLoaded = false;
 		} finally {
 			loading = false;
-			initialLoad = false;
 		}
 	}
 
@@ -91,11 +98,12 @@
 		eventId = trimmed;
 		eventName = null;
 		notFound = false;
-		initialLoad = true;
+		eventLoaded = false;
+		loading = true;
 		const url = new URL($page.url);
 		url.searchParams.set('event', trimmed);
 		history.replaceState({}, '', url);
-		fetchPhotos(trimmed);
+		fetchPhotos(trimmed, true);
 	}
 
 	function handleFiles(files: File[]) {
@@ -137,8 +145,8 @@
 
 			selectedFiles = [];
 			uploadStatus = 'All photos uploaded!';
-			done = uploadedCount >= MAX_PHOTOS;
-			fetchPhotos(eventId);
+			done = uploadedCount >= maxPhotos;
+			fetchPhotos(eventId, false);
 		} catch (err) {
 			uploadError = err instanceof Error ? err.message : 'Upload failed';
 			uploadStatus = '';
@@ -151,8 +159,8 @@
 		if (eventId) {
 			eventIdInput = eventId;
 			uploadedCount = getUploadedCount(eventId);
-			done = uploadedCount >= MAX_PHOTOS;
-			fetchPhotos(eventId);
+			done = uploadedCount >= maxPhotos;
+			fetchPhotos(eventId, true);
 		}
 	});
 </script>
@@ -192,9 +200,16 @@
 		<button
 			type="submit"
 			disabled={eventIdInput.trim().length < 5 || loading}
-			class="rounded-xl bg-primary px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:opacity-50"
+			class="rounded-xl bg-primary px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
 		>
-			{loading ? 'Loading...' : 'View'}
+			{#if loading}
+				<svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+				</svg>
+			{:else}
+				View
+			{/if}
 		</button>
 	</form>
 
@@ -221,7 +236,7 @@
 		</div>
 	{/if}
 
-	{#if eventId && !loading && !notFound}
+	{#if eventId && eventLoaded && !notFound}
 		<div class="mx-auto mb-8 max-w-lg space-y-3">
 			<div class="flex items-center gap-2 rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100">
 				<span class="text-xs font-medium text-gray-400">ID</span>
@@ -258,14 +273,23 @@
 		</div>
 
 		<div class="mx-auto mb-8 max-w-lg space-y-4">
-			{#if !done}
+			{#if expired}
+				<div class="rounded-xl bg-gray-50 p-4 text-center">
+					<p class="font-medium text-gray-600">Uploads have closed for this event.</p>
+				</div>
+			{:else if !done}
 				<p class="text-center text-sm text-gray-500">
-					You can upload up to {MAX_PHOTOS} photos ({MAX_PHOTOS - uploadedCount} remaining)
+					You can upload up to {maxPhotos} photos ({maxPhotos - uploadedCount} remaining)
 				</p>
+				{#if uploadDeadline}
+					<p class="text-center text-xs text-gray-400">
+						Deadline: {new Date(uploadDeadline).toLocaleString()}
+					</p>
+				{/if}
 				<CameraCapture onFiles={handleFiles} disabled={!canAddMore || isUploading} />
 			{:else}
 				<div class="rounded-xl bg-green-50 p-4 text-center">
-					<p class="font-medium text-green-700">You've uploaded all {MAX_PHOTOS} photos. Thank you!</p>
+					<p class="font-medium text-green-700">You've uploaded all {maxPhotos} photos. Thank you!</p>
 				</div>
 			{/if}
 

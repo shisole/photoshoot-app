@@ -7,7 +7,8 @@
 	import { getUploadedCount, incrementUploadedCount } from '$lib/utils/upload-limit';
 
 	let { data } = $props();
-	const MAX_PHOTOS = 5;
+	const maxPhotos = data.maxPhotos;
+	let expired = $derived(data.uploadDeadline ? new Date() > new Date(data.uploadDeadline) : false);
 
 	let displayName = $derived(data.eventName ?? `Event ${data.eventId}`);
 
@@ -21,12 +22,12 @@
 	let done = $state(false);
 	let errorMessage = $state('');
 
-	let remaining = $derived(MAX_PHOTOS - uploadedCount - selectedFiles.length);
-	let canAddMore = $derived(remaining > 0 && !isUploading && !done);
+	let remaining = $derived(maxPhotos - uploadedCount - selectedFiles.length);
+	let canAddMore = $derived(remaining > 0 && !isUploading && !done && !expired);
 
 	$effect(() => {
 		uploadedCount = getUploadedCount(data.eventId);
-		done = uploadedCount >= MAX_PHOTOS;
+		done = uploadedCount >= maxPhotos;
 	});
 
 	function handleFiles(files: File[]) {
@@ -68,7 +69,7 @@
 
 			selectedFiles = [];
 			uploadStatus = 'All photos uploaded!';
-			done = uploadedCount >= MAX_PHOTOS;
+			done = uploadedCount >= maxPhotos;
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : 'Upload failed';
 			uploadStatus = '';
@@ -93,16 +94,23 @@
 	<div class="mb-6 text-center">
 		<h1 class="mb-1 text-2xl font-bold text-gray-900">{displayName}</h1>
 		<p class="text-sm text-gray-500">
-			{#if done}
-				You've uploaded all {MAX_PHOTOS} photos. Thank you!
+			{#if expired}
+				Uploads have closed for this event.
+			{:else if done}
+				You've uploaded all {maxPhotos} photos. Thank you!
 			{:else}
-				You can upload up to {MAX_PHOTOS} photos ({MAX_PHOTOS - uploadedCount} remaining)
+				You can upload up to {maxPhotos} photos ({maxPhotos - uploadedCount} remaining)
 			{/if}
 		</p>
+		{#if data.uploadDeadline && !expired}
+			<p class="mt-1 text-xs text-gray-400">
+				Deadline: {new Date(data.uploadDeadline).toLocaleString()}
+			</p>
+		{/if}
 	</div>
 
 	<div class="space-y-5">
-		{#if !done}
+		{#if !done && !expired}
 			<CameraCapture onFiles={handleFiles} disabled={!canAddMore || isUploading} />
 		{/if}
 
@@ -123,7 +131,11 @@
 			</button>
 		{/if}
 
-		{#if done}
+		{#if expired}
+			<div class="rounded-xl bg-gray-50 p-4 text-center">
+				<p class="font-medium text-gray-600">Uploads have closed for this event.</p>
+			</div>
+		{:else if done}
 			<div class="rounded-xl bg-green-50 p-4 text-center">
 				<p class="font-medium text-green-700">All photos uploaded successfully!</p>
 			</div>

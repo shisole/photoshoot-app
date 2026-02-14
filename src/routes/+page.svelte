@@ -1,7 +1,3 @@
-<script lang="ts">
-	import { enhance } from '$app/forms';
-</script>
-
 <svelte:head>
 	<title>Keepsly</title>
 	<meta name="description" content="A digital album — create an event and let guests share photos via QR code. Memories for keeps." />
@@ -19,27 +15,19 @@
 		<p class="text-gray-500">Memories for keeps — create an event and share the QR code with your guests</p>
 	</div>
 
-	<div class="flex flex-col items-center gap-4">
-		<form method="POST" action="?/create" use:enhance class="flex w-full max-w-sm flex-col gap-3">
-			<input
-				type="text"
-				name="eventName"
-				placeholder="Event name (e.g. Sarah's Birthday)"
-				required
-				class="rounded-xl border border-gray-300 px-4 py-3 text-center text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-			/>
-			<button
-				type="submit"
-				class="rounded-xl bg-primary px-8 py-4 text-lg font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
-			>
-				Create Event
-			</button>
-		</form>
+	<div class="flex items-center justify-center gap-4">
+		<a
+			href="/create-event"
+			class="rounded-xl bg-primary px-8 py-4 text-lg font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
+		>
+			Create event
+		</a>
+		<span class="text-sm text-gray-400">or</span>
 		<a
 			href="/gallery"
-			class="text-sm font-medium text-primary hover:text-primary-dark"
+			class="rounded-xl border border-gray-300 bg-white px-8 py-4 text-lg font-semibold text-gray-700 shadow-md transition-colors hover:bg-gray-50"
 		>
-			View an existing event's gallery
+			View a gallery
 		</a>
 	</div>
 </div>
