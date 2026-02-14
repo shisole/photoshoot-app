@@ -9,10 +9,12 @@
 	import { getUploadedCount, incrementUploadedCount } from '$lib/utils/upload-limit';
 	import { page } from '$app/stores';
 
+	let { data } = $props();
+
 	let eventIdInput = $state('');
 	let eventId = $state($page.url.searchParams.get('event') ?? '');
 	let eventName = $state<string | null>(null);
-	let bannerUrl = $state<string | null>(null);
+	let bannerUrl = $state<string | null>(data.bannerUrl);
 	let photos = $state<string[]>([]);
 	let loading = $state(!!eventId);
 	let eventLoaded = $state(false);
@@ -214,10 +216,10 @@
 	<meta property="og:title" content="{eventId ? `${displayName} - Gallery` : 'Photo Gallery'} - Keepsly" />
 	<meta property="og:description" content="View photos from {eventId ? displayName : 'a Keepsly event'}." />
 	<meta property="og:type" content="website" />
-	{#if bannerUrl}
-		<meta property="og:image" content={bannerUrl} />
+	{#if bannerUrl || data.bannerUrl}
+		<meta property="og:image" content={bannerUrl ?? data.bannerUrl} />
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:image" content={bannerUrl} />
+		<meta name="twitter:image" content={bannerUrl ?? data.bannerUrl} />
 	{:else}
 		<meta name="twitter:card" content="summary" />
 	{/if}
