@@ -15,7 +15,7 @@
 		<p class="text-gray-500">Memories for keeps — create an event and share the QR code with your guests</p>
 	</div>
 
-	<div class="flex items-center justify-center gap-4">
+	<div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 		<a
 			href="/create-event"
 			class="rounded-xl bg-primary px-8 py-4 text-lg font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
