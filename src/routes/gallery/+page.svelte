@@ -11,6 +11,7 @@
 	import SEO from '$lib/components/SEO.svelte';
 	import SocialShare from '$lib/components/SocialShare.svelte';
 	import { connectPhotoStream } from '$lib/utils/photo-stream';
+	import { getHostKey } from '$lib/utils/host-keys';
 
 	let { data } = $props();
 
@@ -327,6 +328,7 @@
 			<p class="mb-3 text-xs font-medium text-gray-400">Recent searches</p>
 			<div class="flex flex-col gap-2">
 				{#each recentSearches as recent}
+					{@const hostKey = getHostKey(recent.eventId)}
 					<button
 						onclick={() => selectRecent(recent.eventId)}
 						class="flex items-center gap-3 rounded-xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-gray-100 transition-all hover:bg-gray-50 hover:shadow-md"
@@ -337,9 +339,23 @@
 							</svg>
 						</div>
 						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium text-gray-800">{recent.eventName ?? 'Unnamed Event'}</p>
+							<div class="flex items-center gap-1.5">
+								<p class="truncate text-sm font-medium text-gray-800">{recent.eventName ?? 'Unnamed Event'}</p>
+								{#if hostKey}
+									<span class="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">Host</span>
+								{/if}
+							</div>
 							<p class="truncate font-mono text-xs text-gray-400">{recent.eventId}</p>
 						</div>
+						{#if hostKey}
+							<a
+								href="/event/{recent.eventId}/manage?key={hostKey}"
+								onclick={(e) => e.stopPropagation()}
+								class="shrink-0 text-xs font-medium text-primary hover:underline"
+							>
+								Manage
+							</a>
+						{/if}
 						<svg class="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
 						</svg>
