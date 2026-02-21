@@ -2,28 +2,37 @@
 	import * as QRCodeLib from 'qrcode';
 
 	let { url }: { url: string } = $props();
-	let canvas: HTMLCanvasElement;
+	let imgSrc = $state('');
+	let offscreenCanvas: HTMLCanvasElement | null = null;
+
 	$effect(() => {
-		if (canvas && url) {
-			QRCodeLib.toCanvas(canvas, url, {
+		if (url) {
+			if (!offscreenCanvas) {
+				offscreenCanvas = document.createElement('canvas');
+			}
+			QRCodeLib.toCanvas(offscreenCanvas, url, {
 				width: 256,
 				margin: 2,
 				color: { dark: '#000000', light: '#ffffff' }
+			}).then(() => {
+				imgSrc = offscreenCanvas!.toDataURL('image/png');
 			});
 		}
 	});
 
 	function save() {
-		const dataUrl = canvas.toDataURL('image/png');
+		if (!imgSrc) return;
 		const a = document.createElement('a');
-		a.href = dataUrl;
+		a.href = imgSrc;
 		a.download = 'qr-code.png';
 		a.click();
 	}
 </script>
 
 <div class="flex flex-col items-center gap-3">
-	<canvas bind:this={canvas} class="rounded-lg shadow-md"></canvas>
+	{#if imgSrc}
+		<img src={imgSrc} alt="QR code for {url}" width="256" height="256" class="rounded-lg shadow-md" />
+	{/if}
 	<button
 		onclick={save}
 		class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100"
