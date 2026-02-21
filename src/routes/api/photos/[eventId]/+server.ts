@@ -60,18 +60,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		throw error(400, 'Invalid event ID');
 	}
 
-	const [meta, existingPhotos] = await Promise.all([
-		getEventMeta(eventId),
-		listEventPhotos(eventId)
-	]);
+	const meta = await getEventMeta(eventId);
 
 	if (meta?.uploadDeadline && new Date() > new Date(meta.uploadDeadline)) {
 		throw error(403, 'Upload deadline has passed');
-	}
-
-	const maxPhotos = meta?.maxPhotos ?? 5;
-	if (existingPhotos.length >= maxPhotos) {
-		throw error(403, 'Photo limit reached for this event');
 	}
 
 	const body = await request.arrayBuffer();
