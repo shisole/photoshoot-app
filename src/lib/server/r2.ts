@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { env } from '$env/dynamic/private';
 
 function getR2Client() {
@@ -127,4 +127,13 @@ export async function listEventPhotoKeys(eventId: string): Promise<string[]> {
 		.filter((obj) => obj.Key && obj.Key.endsWith('.jpg') && !obj.Key.endsWith('/banner.jpg'))
 		.sort((a, b) => (b.LastModified?.getTime() ?? 0) - (a.LastModified?.getTime() ?? 0))
 		.map((obj) => obj.Key!);
+}
+
+export async function deletePhoto(eventId: string, photoId: string): Promise<void> {
+	const client = getR2Client();
+	const command = new DeleteObjectCommand({
+		Bucket: env.R2_BUCKET_NAME,
+		Key: `events/${eventId}/${photoId}.jpg`
+	});
+	await client.send(command);
 }
