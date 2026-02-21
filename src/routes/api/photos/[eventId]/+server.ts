@@ -12,6 +12,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 	const limitParam = url.searchParams.get('limit');
 	const cursor = url.searchParams.get('cursor') ?? undefined;
+	const offsetParam = url.searchParams.get('offset');
+	const pageParam = url.searchParams.get('page');
 
 	try {
 		const meta = await getEventMeta(eventId);
@@ -24,7 +26,17 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 		if (limitParam) {
 			const limit = Math.max(1, Math.min(100, parseInt(limitParam, 10) || 20));
-			const result = await listEventPhotosPaginated(eventId, limit, cursor);
+
+			// Resolve offset from cursor, offset, or page param (priority: cursor > offset > page)
+			let resolvedCursor = cursor;
+			if (!resolvedCursor && offsetParam) {
+				resolvedCursor = String(Math.max(0, parseInt(offsetParam, 10) || 0));
+			} else if (!resolvedCursor && pageParam) {
+				const page = Math.max(1, parseInt(pageParam, 10) || 1);
+				resolvedCursor = String((page - 1) * limit);
+			}
+
+			const result = await listEventPhotosPaginated(eventId, limit, resolvedCursor);
 			return json({
 				...baseMeta,
 				photos: result.photos,
